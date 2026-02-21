@@ -1,0 +1,22 @@
+# Project guide (contains AWS account ID, bucket names, IAM user details)
+CLAUDE.md
+
+# AWS
+.aws/
+*.pem
+
+# Environment variables
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (for when we build the frontend/lambda)
+node_modules/
+dist/
+.output/
+
+# Test files
+testfile.txt

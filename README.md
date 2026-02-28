@@ -34,7 +34,7 @@ This endpoint will only be called for auth users who can upload documents on the
 ** Should scale for 10M+ users, 50TB+ storage.
 
 # S3 Bucket
-This is our go to as market default and high scalability, speed, support, good development experience and integrates with other AWS products like the event bridge. It needs to have a set of policies set in order to achieve system security, in short files will be locked if Guard Duty doesn't tag them with the NO_TREATS tag, and files which are compromised will be then deleted of moved to a quarantine bucket, still to decide if we want to maintain 2 buckets or not.
+This is our go to as market default and high scalability, speed ( presigned links support streamlined chunk uploads ), support, good development experience and integrates with other AWS products like the event bridge. It needs to have a set of policies set in order to achieve system security, in short files will be locked if Guard Duty doesn't tag them with the NO_TREATS tag, and files which are compromised will be then deleted of moved to a quarantine bucket, still to decide if we want to maintain 2 buckets or not.
 
 # Amazon EventBridge
 # Amazon GuarDuty

@@ -9,6 +9,11 @@ As MR Fingers needs to upload documents on a system, where users from WEB/APPS/A
 * Mitigate security breaches
 * Keep file metadata database
 
+
+# Non-Goals
+* IAM User groups
+* Authentication
+
 # Proposed architecture
 ![Safe File Upload System - Page 1 High level design](https://github.com/user-attachments/assets/a8a21276-10a9-4d57-bc43-18ea78d265db)
 

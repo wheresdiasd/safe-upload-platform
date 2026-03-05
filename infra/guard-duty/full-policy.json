@@ -1,0 +1,71 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowManagedRuleToSendS3EventsToGuardDuty",
+            "Effect": "Allow",
+            "Action": [
+                "events:PutRule",
+                "events:DeleteRule",
+                "events:PutTargets",
+                "events:RemoveTargets"
+            ],
+            "Resource": "arn:aws:events:eu-west-2:<AWS_ACCOUNT_ID>:rule/DO-NOT-DELETE-AmazonGuardDutyMalwareProtectionS3*",
+            "Condition": {
+                "StringLike": {
+                    "events:ManagedBy": "malware-protection-plan.guardduty.amazonaws.com"
+                }
+            }
+        },
+        {
+            "Sid": "AllowGuardDutyToMonitorEventBridgeManagedRule",
+            "Effect": "Allow",
+            "Action": [
+                "events:DescribeRule",
+                "events:ListTargetsByRule"
+            ],
+            "Resource": "arn:aws:events:eu-west-2:<AWS_ACCOUNT_ID>:rule/DO-NOT-DELETE-AmazonGuardDutyMalwareProtectionS3*"
+        },
+        {
+            "Sid": "AllowPostScanTag",
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObjectTagging",
+                "s3:GetObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:GetObjectVersionTagging"
+            ],
+            "Resource": "arn:aws:s3:::safe-upload-platform-mrfingers/*"
+        },
+        {
+            "Sid": "AllowEnableS3EventBridgeEvents",
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutBucketNotification",
+                "s3:GetBucketNotification"
+            ],
+            "Resource": "arn:aws:s3:::safe-upload-platform-mrfingers"
+        },
+        {
+            "Sid": "AllowPutValidationObject",
+            "Effect": "Allow",
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::safe-upload-platform-mrfingers/malware-protection-resource-validation-object"
+        },
+        {
+            "Sid": "AllowCheckBucketOwnership",
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::safe-upload-platform-mrfingers"
+        },
+        {
+            "Sid": "AllowMalwareScan",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:GetObjectVersion"
+            ],
+            "Resource": "arn:aws:s3:::safe-upload-platform-mrfingers/*"
+        }
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "dynamodb:*",
+            "Resource": "arn:aws:dynamodb:eu-west-2:<AWS_ACCOUNT_ID>:table/safe-upload-*"
+        }
+    ]
+}

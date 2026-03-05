@@ -1,0 +1,15 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "events:PutRule",
+                "events:PutTargets",
+                "events:DeleteRule",
+                "events:RemoveTargets"
+            ],
+            "Resource": "arn:aws:events:eu-west-2:<AWS_ACCOUNT_ID>:rule/*"
+        }
+    ]
+}

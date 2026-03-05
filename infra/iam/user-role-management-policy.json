@@ -1,0 +1,31 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:AttachRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:GetRole",
+        "iam:PassRole",
+        "iam:CreatePolicy",
+        "iam:DeletePolicy"
+      ],
+      "Resource": [
+        "arn:aws:iam::<AWS_ACCOUNT_ID>:role/safe-upload-*",
+        "arn:aws:iam::<AWS_ACCOUNT_ID>:policy/safe-upload-*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:ListRoles",
+        "iam:ListPolicies"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

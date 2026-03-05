@@ -1,0 +1,20 @@
+{
+  "TableName": "safe-upload-files",
+  "AttributeDefinitions": [
+    { "AttributeName": "id", "AttributeType": "S" },
+    { "AttributeName": "uploaded_by", "AttributeType": "S" }
+  ],
+  "KeySchema": [
+    { "AttributeName": "id", "KeyType": "HASH" }
+  ],
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "uploaded_by-index",
+      "KeySchema": [
+        { "AttributeName": "uploaded_by", "KeyType": "HASH" }
+      ],
+      "Projection": { "ProjectionType": "ALL" }
+    }
+  ],
+  "BillingMode": "PAY_PER_REQUEST"
+}

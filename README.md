@@ -44,7 +44,10 @@ This is our go to as market default and high scalability, speed ( presigned link
 # AWS Lambda
 ## Trade-offs 
 ### Chi Router vs Terraform + IaC
-As this project is for personal usage and ramping up on lambda architecture integrated with go language, we followed a simple approach by using chi Router which creates a monolithic lambda. This is not a recommended approach on real businesses, but here we choose fast shipping / learning process / code structure organisation over IaC w Terraform Learning curve / Granularity of permissioning. However we should also bear in mind other trade-offs such as cold starts / memory usage per endpoint ( which are now coupled )
+As this project is for personal usage and ramping up on lambda architecture integrated with go language, we followed a simple approach by using chi Router which creates a monolithic lambda. This is not a recommended approach on real businesses, but here we choose fast shipping / learning process / code structure organisation over IaC w Terraform Learning curve / Granularity of permissioning. However we should also bear in mind other trade-offs such as cold starts / memory usage per endpoint ( which are now coupled ).
+![Safe File Upload System - Page 3 Lambda architecture - CHI Router vs IaC](https://github.com/user-attachments/assets/fc820399-d9bf-4475-9ac4-7e8186ce1d01)
+
+
 
 # Dynamo DB
 

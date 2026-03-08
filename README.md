@@ -23,6 +23,7 @@ As MR Fingers needs to upload documents on a system, where users from WEB/APPS/A
 ![Safe File Upload System - Page 1 File update](https://github.com/user-attachments/assets/661165c6-8f43-43b2-8414-170e8f0e78f7)
 ![Safe File Upload System - Page 2 Upload file](https://github.com/user-attachments/assets/a127c693-20e4-4eae-a28a-39e265ae8cbb)
 
+
 # User/Client
 The client component is the door to the upload platform, it allows final users to upload files via web interface or app, it can also be an API based as is possible to request pre-signed urls via API if you have a valid auth token.
 
@@ -41,5 +42,10 @@ This is our go to as market default and high scalability, speed ( presigned link
 # Amazon EventBridge
 # Amazon GuarDuty
 # AWS Lambda
+## Trade-offs 
+### Chi Router vs Terraform + IaC
+As this project is for personal usage and ramping up on lambda architecture integrated with go language, we followed a simple approach by using chi Router which creates a monolithic lambda. This is not a recommended approach on real businesses, but here we choose fast shipping / learning process / code structure organisation over IaC w Terraform Learning curve / Granularity of permissioning.
+## Chi Router
+
 # Dynamo DB
 

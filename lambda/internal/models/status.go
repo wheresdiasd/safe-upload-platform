@@ -7,4 +7,5 @@
         StatusClean         = "clean"                                                                            
         StatusInfected      = "infected"                                                                         
         StatusQuarantined   = "quarantined"
+        StatusDeleted = "deleted"
   )

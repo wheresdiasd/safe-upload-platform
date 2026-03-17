@@ -43,7 +43,7 @@ Decided to delete infected files instead of keeping 2 buckets, that would give u
 
 # Amazon EventBridge
 # Amazon GuarDuty
-# AWS Lambda
+# AWS Lambda ([setup](./lambda/README.md))
 ## Trade-offs 
 ### Chi Router vs Terraform + IaC
 As this project is for personal usage and ramping up on lambda architecture integrated with go language, we followed a simple approach by using chi Router which creates a monolithic lambda. This is not a recommended approach on real businesses, but here we choose fast shipping / learning process / code structure organisation over IaC w Terraform Learning curve / Granularity of permissioning. However we should also bear in mind other trade-offs such as cold starts / memory usage per endpoint ( which are now coupled ).

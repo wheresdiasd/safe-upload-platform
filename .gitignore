@@ -18,6 +18,11 @@ node_modules/
 dist/
 .output/
 
+# Build artifacts
+lambda/bin/
+lambda/*.zip
+lambda/bootstrap
+
 # Test files
 testfile.txt
 eicar-test.txt

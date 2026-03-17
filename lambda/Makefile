@@ -1,4 +1,4 @@
-.PHONY: build-create-file build-update-file deploy-create-file deploy-update-file build-all deploy-all clean
+.PHONY: build-create-file build-update-file deploy-create-file deploy-update-file update-create-file update-update-file build-all deploy-all update-all clean
 
 BUCKET_NAME ?= $(AWS_BUCKET_NAME)
 TABLE_NAME ?= $(AWS_TABLE_NAME)
@@ -36,6 +36,18 @@ deploy-update-file: build-update-file
 		--environment '{"Variables":{"BUCKET_NAME":"$(BUCKET_NAME)","TABLE_NAME":"$(TABLE_NAME)"}}'
 
 deploy-all: deploy-create-file deploy-update-file
+
+update-create-file: build-create-file
+	aws lambda update-function-code \
+		--function-name safe-upload-create-file \
+		--zip-file fileb://create-file.zip
+
+update-update-file: build-update-file
+	aws lambda update-function-code \
+		--function-name safe-upload-update-file \
+		--zip-file fileb://update-file.zip
+
+update-all: update-create-file update-update-file
 
 clean:
 	rm -rf bin/ *.zip bootstrap

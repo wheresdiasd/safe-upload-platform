@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -31,18 +32,22 @@ type S3Object struct {
 }
 
 type ScanResultDetails struct {
-	ScanResult string `json:"scanResult"`
+	ScanResultStatus string `json:"scanResultStatus"`
 }
 
 func handler(ctx context.Context, event GuardDutyScanEvent) error {
 	objectKey := event.Detail.S3ObjectDetails.ObjectKey
-	scanResult := event.Detail.ScanResultDetails.ScanResult
+	scanResult := event.Detail.ScanResultDetails.ScanResultStatus
+	fileID := fileIDFromKey(objectKey)
+
+	log.Printf("[update-file] Scan result received: objectKey=%s scanResult=%s fileID=%s", objectKey, scanResult, fileID)
 
 	if scanResult == "NO_THREATS_FOUND" {
+		log.Printf("[update-file] File is clean, updating status: fileID=%s", fileID)
 		_, err := clients.DynamoClient.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 			TableName: aws.String(clients.TableName),
 			Key: map[string]types.AttributeValue{
-				"id": &types.AttributeValueMemberS{Value: fileIDFromKey(objectKey)},
+				"id": &types.AttributeValueMemberS{Value: fileID},
 			},
 			UpdateExpression: aws.String("SET #status = :status REMOVE expires_at"),
 			ExpressionAttributeNames: map[string]string{
@@ -52,8 +57,15 @@ func handler(ctx context.Context, event GuardDutyScanEvent) error {
 				":status": &types.AttributeValueMemberS{Value: models.StatusClean},
 			},
 		})
-		return err
+		if err != nil {
+			log.Printf("[update-file] ERROR: failed to update clean status in DynamoDB: %v", err)
+			return err
+		}
+		log.Printf("[update-file] SUCCESS: file marked as clean: fileID=%s", fileID)
+		return nil
 	}
+
+	log.Printf("[update-file] Threat detected, deleting file from S3: objectKey=%s", objectKey)
 
 	_, err := clients.S3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(clients.BucketName),
@@ -61,25 +73,34 @@ func handler(ctx context.Context, event GuardDutyScanEvent) error {
 	})
 
 	if err != nil {
+		log.Printf("[update-file] ERROR: failed to delete infected file from S3: %v", err)
 		return fmt.Errorf("failed to delete infected file: %w", err)
 	}
+
+	log.Printf("[update-file] Infected file deleted from S3, updating DynamoDB: fileID=%s", fileID)
 
 	_, err = clients.DynamoClient.UpdateItem(ctx, &dynamodb.UpdateItemInput{
 		TableName: aws.String(clients.TableName),
 		Key: map[string]types.AttributeValue{
-			"id": &types.AttributeValueMemberS{Value: fileIDFromKey(objectKey)},
+			"id": &types.AttributeValueMemberS{Value: fileID},
 		},
 		UpdateExpression: aws.String("SET #status = :status, expires_at = :expires"),
 		ExpressionAttributeNames: map[string]string{
 			"#status": "status",
 		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":status": &types.AttributeValueMemberS{Value: models.StatusDeleted},
+			":status":  &types.AttributeValueMemberS{Value: models.StatusDeleted},
 			":expires": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d",
 				time.Now().Add(30*24*time.Hour).Unix())},
 		},
 	})
-	return err
+	if err != nil {
+		log.Printf("[update-file] ERROR: failed to update deleted status in DynamoDB: %v", err)
+		return err
+	}
+
+	log.Printf("[update-file] SUCCESS: infected file handled, record marked as deleted with 30-day TTL: fileID=%s", fileID)
+	return nil
 }
 
 func fileIDFromKey(key string) string {

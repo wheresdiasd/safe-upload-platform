@@ -29,6 +29,7 @@ type ScanDetail struct {
 type S3Object struct {
 	BucketName string `json:"bucketName"`
 	ObjectKey  string `json:"objectKey"`
+	VersionID  string `json:"versionId"`
 }
 
 type ScanResultDetails struct {
@@ -37,10 +38,11 @@ type ScanResultDetails struct {
 
 func handler(ctx context.Context, event GuardDutyScanEvent) error {
 	objectKey := event.Detail.S3ObjectDetails.ObjectKey
+	versionID := event.Detail.S3ObjectDetails.VersionID
 	scanResult := event.Detail.ScanResultDetails.ScanResultStatus
 	fileID := fileIDFromKey(objectKey)
 
-	log.Printf("[update-file] Scan result received: objectKey=%s scanResult=%s fileID=%s", objectKey, scanResult, fileID)
+	log.Printf("[update-file] Scan result received: objectKey=%s versionId=%s scanResult=%s fileID=%s", objectKey, versionID, scanResult, fileID)
 
 	if scanResult == "NO_THREATS_FOUND" {
 		log.Printf("[update-file] File is clean, updating status: fileID=%s", fileID)
@@ -65,11 +67,22 @@ func handler(ctx context.Context, event GuardDutyScanEvent) error {
 		return nil
 	}
 
-	log.Printf("[update-file] Threat detected, deleting file from S3: objectKey=%s", objectKey)
+	if scanResult != "THREATS_FOUND" {
+		log.Printf("[update-file] Unexpected scan status, skipping: objectKey=%s scanResult=%s", objectKey, scanResult)
+		return nil
+	}
+
+	if versionID == "" {
+		log.Printf("[update-file] ERROR: missing versionId in event — refusing to delete (bucket has versioning enabled)")
+		return fmt.Errorf("missing versionId in GuardDuty event for objectKey=%s", objectKey)
+	}
+
+	log.Printf("[update-file] Threat detected, deleting object version from S3: objectKey=%s versionId=%s", objectKey, versionID)
 
 	_, err := clients.S3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
-		Bucket: aws.String(clients.BucketName),
-		Key:    aws.String(objectKey),
+		Bucket:    aws.String(clients.BucketName),
+		Key:       aws.String(objectKey),
+		VersionId: aws.String(versionID),
 	})
 
 	if err != nil {

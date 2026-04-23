@@ -16,7 +16,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	dynamotypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	chiadapter "github.com/awslabs/aws-lambda-go-api-proxy/chi"
 	chimux "github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -40,6 +42,15 @@ type CreateFileResponse struct {
 	ChunkSize int64     `json:"chunk_size"`
 	Parts     []PartUrl `json:"parts"`
 	ExpiresAt int64     `json:"expires_at"`
+}
+
+type UploadedPart struct {
+	PartNumber int32  `json:"part_number"`
+	ETag       string `json:"etag"`
+}
+
+type CompleteMultipartUploadRequest struct {
+	Parts []UploadedPart `json:"parts"`
 }
 
 func CreateFile(w http.ResponseWriter, r *http.Request) {
@@ -150,11 +161,187 @@ func CreateFile(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func CompleteUpload(w http.ResponseWriter, r *http.Request) {
+	fileID := chimux.URLParam(r, "id")
+	log.Printf("[complete-upload] Request received: fileID=%s", fileID)
+
+	if fileID == "" {
+		log.Printf("[complete-upload] ERROR: missing fileID in path")
+		http.Error(w, `{"error": "file id is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	var req CompleteMultipartUploadRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("[complete-upload] ERROR: invalid request body: %v", err)
+		http.Error(w, `{"error": "invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if len(req.Parts) == 0 {
+		log.Printf("[complete-upload] ERROR: no parts provided")
+		http.Error(w, `{"error": "parts are required"}`, http.StatusBadRequest)
+		return
+	}
+
+	getResult, err := clients.DynamoClient.GetItem(r.Context(), &dynamodb.GetItemInput{
+		TableName: aws.String(clients.TableName),
+		Key: map[string]dynamotypes.AttributeValue{
+			"id": &dynamotypes.AttributeValueMemberS{Value: fileID},
+		},
+	})
+	if err != nil {
+		log.Printf("[complete-upload] ERROR: failed to load file record: %v", err)
+		http.Error(w, `{"error": "failed to load file record"}`, http.StatusInternalServerError)
+		return
+	}
+
+	if getResult.Item == nil {
+		log.Printf("[complete-upload] ERROR: file record not found: fileID=%s", fileID)
+		http.Error(w, `{"error": "file not found"}`, http.StatusNotFound)
+		return
+	}
+
+	var record models.FileRecord
+	if err := attributevalue.UnmarshalMap(getResult.Item, &record); err != nil {
+		log.Printf("[complete-upload] ERROR: failed to unmarshal file record: %v", err)
+		http.Error(w, `{"error": "failed to parse file record"}`, http.StatusInternalServerError)
+		return
+	}
+
+	if record.Status != models.StatusPendingUpload {
+		log.Printf("[complete-upload] ERROR: invalid status transition: fileID=%s status=%s", fileID, record.Status)
+		http.Error(w, `{"error": "file is not pending upload"}`, http.StatusConflict)
+		return
+	}
+
+	completedParts := make([]s3types.CompletedPart, len(req.Parts))
+	for i, p := range req.Parts {
+		completedParts[i] = s3types.CompletedPart{
+			PartNumber: aws.Int32(p.PartNumber),
+			ETag:       aws.String(p.ETag),
+		}
+	}
+
+	log.Printf("[complete-upload] Completing multipart upload: fileID=%s uploadID=%s parts=%d", fileID, record.UploadID, len(completedParts))
+
+	_, err = clients.S3Client.CompleteMultipartUpload(r.Context(), &s3.CompleteMultipartUploadInput{
+		Bucket:          aws.String(clients.BucketName),
+		Key:             aws.String(record.S3Key),
+		UploadId:        aws.String(record.UploadID),
+		MultipartUpload: &s3types.CompletedMultipartUpload{Parts: completedParts},
+	})
+	if err != nil {
+		log.Printf("[complete-upload] ERROR: failed to complete multipart upload: %v", err)
+		http.Error(w, `{"error": "failed to complete upload"}`, http.StatusInternalServerError)
+		return
+	}
+
+	_, err = clients.DynamoClient.UpdateItem(r.Context(), &dynamodb.UpdateItemInput{
+		TableName: aws.String(clients.TableName),
+		Key: map[string]dynamotypes.AttributeValue{
+			"id": &dynamotypes.AttributeValueMemberS{Value: fileID},
+		},
+		UpdateExpression: aws.String("SET #status = :status REMOVE expires_at"),
+		ExpressionAttributeNames: map[string]string{
+			"#status": "status",
+		},
+		ExpressionAttributeValues: map[string]dynamotypes.AttributeValue{
+			":status": &dynamotypes.AttributeValueMemberS{Value: models.StatusPendingScan},
+		},
+	})
+	if err != nil {
+		log.Printf("[complete-upload] ERROR: failed to update status in DynamoDB: %v", err)
+		http.Error(w, `{"error": "failed to update file status"}`, http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[complete-upload] SUCCESS: fileID=%s status=pending_scan", fileID)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"id":     fileID,
+		"status": models.StatusPendingScan,
+	})
+}
+
+type DownloadFileResponse struct {
+	ID        string `json:"id"`
+	URL       string `json:"url"`
+	ExpiresAt int64  `json:"expires_at"`
+}
+
+func DownloadFile(w http.ResponseWriter, r *http.Request) {
+	fileID := chimux.URLParam(r, "id")
+	log.Printf("[download-file] Request received: fileID=%s", fileID)
+
+	if fileID == "" {
+		log.Printf("[download-file] ERROR: missing fileID in path")
+		http.Error(w, `{"error": "file id is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	getResult, err := clients.DynamoClient.GetItem(r.Context(), &dynamodb.GetItemInput{
+		TableName: aws.String(clients.TableName),
+		Key: map[string]dynamotypes.AttributeValue{
+			"id": &dynamotypes.AttributeValueMemberS{Value: fileID},
+		},
+	})
+	if err != nil {
+		log.Printf("[download-file] ERROR: failed to load file record: %v", err)
+		http.Error(w, `{"error": "failed to load file record"}`, http.StatusInternalServerError)
+		return
+	}
+
+	if getResult.Item == nil {
+		log.Printf("[download-file] ERROR: file record not found: fileID=%s", fileID)
+		http.Error(w, `{"error": "file not found"}`, http.StatusNotFound)
+		return
+	}
+
+	var record models.FileRecord
+	if err := attributevalue.UnmarshalMap(getResult.Item, &record); err != nil {
+		log.Printf("[download-file] ERROR: failed to unmarshal file record: %v", err)
+		http.Error(w, `{"error": "failed to parse file record"}`, http.StatusInternalServerError)
+		return
+	}
+
+	if record.Status != models.StatusClean {
+		log.Printf("[download-file] ERROR: file not available for download: fileID=%s status=%s", fileID, record.Status)
+		http.Error(w, `{"error": "file is not available for download"}`, http.StatusConflict)
+		return
+	}
+
+	expiresIn := 15 * time.Minute
+	presigned, err := clients.S3PresignClient.PresignGetObject(r.Context(), &s3.GetObjectInput{
+		Bucket: aws.String(clients.BucketName),
+		Key:    aws.String(record.S3Key),
+	}, s3.WithPresignExpires(expiresIn))
+	if err != nil {
+		log.Printf("[download-file] ERROR: failed to presign download URL: %v", err)
+		http.Error(w, `{"error": "failed to generate download URL"}`, http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[download-file] SUCCESS: fileID=%s s3Key=%s", fileID, record.S3Key)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(DownloadFileResponse{
+		ID:        fileID,
+		URL:       presigned.URL,
+		ExpiresAt: time.Now().Add(expiresIn).Unix(),
+	})
+}
+
 func main() {
 	clients.Init()
 
 	r := chimux.NewRouter()
 	r.Post("/files", CreateFile)
+	r.Post("/files/{id}/complete-upload", CompleteUpload)
+	r.Get("/files/{id}", DownloadFile)
 
 	chiLambda := chiadapter.New(r)
 	lambda.Start(chiLambda.ProxyWithContext)

@@ -1,0 +1,9 @@
+{
+  "source": ["aws.guardduty"],
+  "detail-type": ["GuardDuty Malware Protection Object Scan Result"],
+  "detail": {
+    "s3ObjectDetails": {
+      "bucketName": ["safe-upload-platform-mrfingers"]
+    }
+  }
+}

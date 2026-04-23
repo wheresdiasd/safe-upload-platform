@@ -22,6 +22,8 @@ dist/
 lambda/bin/
 lambda/*.zip
 lambda/bootstrap
+lambda/create-file
+lambda/update-file
 
 # Test files
 testfile.txt

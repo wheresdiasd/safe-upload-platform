@@ -1,0 +1,17 @@
+title = "safe-upload-platform gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = """
+Historical leak: lambda/output.json was committed in 5b0ff1f3516b containing
+STS temporary credentials and a presigned S3 URL. The credentials are AWS STS
+short-lived tokens (ASIA-prefix, 15-minute expiry from 2026-03-08T23:31:38Z) —
+long expired and not exploitable. The file has been removed from the working
+tree and gitignored so it cannot recur. We allowlist the path here instead of
+rewriting git history.
+"""
+paths = [
+  '''lambda/output\.json''',
+]

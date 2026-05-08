@@ -102,7 +102,7 @@ func handler(ctx context.Context, event GuardDutyScanEvent) error {
 			"#status": "status",
 		},
 		ExpressionAttributeValues: map[string]types.AttributeValue{
-			":status":  &types.AttributeValueMemberS{Value: models.StatusDeleted},
+			":status": &types.AttributeValueMemberS{Value: models.StatusDeleted},
 			":expires": &types.AttributeValueMemberN{Value: fmt.Sprintf("%d",
 				time.Now().Add(30*24*time.Hour).Unix())},
 		},

@@ -25,6 +25,10 @@ lambda/bootstrap
 lambda/create-file
 lambda/update-file
 
+# Lambda invocation dumps from local debugging — frequently contain
+# short-lived presigned URLs and STS temp credentials, never commit.
+lambda/output.json
+
 # Test files
 testfile.txt
 eicar-test.txt

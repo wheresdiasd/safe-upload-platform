@@ -1,0 +1,7 @@
+{
+  "restApiId": "<REST_API_ID>",
+  "resourceId": "<PROXY_RESOURCE_ID>",
+  "httpMethod": "ANY",
+  "authorizationType": "NONE",
+  "apiKeyRequired": true
+}

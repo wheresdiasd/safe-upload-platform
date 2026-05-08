@@ -1,0 +1,61 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write   # required for OIDC token issuance
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false  # never cancel an in-flight deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+          cache-dependency-path: lambda/go.sum
+
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION=8.30.1
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      - name: Run CI checks (defensive)
+        run: make ci-checks
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Update lambda code
+        run: make -C lambda update-all
+
+      - name: Wait for lambdas to reach Active state
+        run: |
+          aws lambda wait function-updated --function-name safe-upload-create-file
+          aws lambda wait function-updated --function-name safe-upload-update-file
+
+      - name: Run smoke tests
+        env:
+          SAFE_UPLOAD_URL: ${{ vars.SAFE_UPLOAD_URL }}
+          SAFE_UPLOAD_KEY: ${{ secrets.SAFE_UPLOAD_KEY }}
+        run: |
+          make smoke
+          make security-smoke

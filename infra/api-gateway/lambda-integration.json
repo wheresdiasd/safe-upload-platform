@@ -1,0 +1,8 @@
+{
+  "restApiId": "<REST_API_ID>",
+  "resourceId": "<PROXY_RESOURCE_ID>",
+  "httpMethod": "ANY",
+  "type": "AWS_PROXY",
+  "integrationHttpMethod": "POST",
+  "uri": "arn:aws:apigateway:<AWS_REGION>:lambda:path/2015-03-31/functions/arn:aws:lambda:<AWS_REGION>:<AWS_ACCOUNT_ID>:function:safe-upload-create-file/invocations"
+}

@@ -1,0 +1,7 @@
+{
+  "FunctionName": "safe-upload-create-file",
+  "StatementId": "apigateway-safe-upload-api-invoke",
+  "Action": "lambda:InvokeFunction",
+  "Principal": "apigateway.amazonaws.com",
+  "SourceArn": "arn:aws:execute-api:<AWS_REGION>:<AWS_ACCOUNT_ID>:<REST_API_ID>/*/*/*"
+}

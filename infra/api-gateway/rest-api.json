@@ -1,0 +1,7 @@
+{
+  "name": "safe-upload-api",
+  "description": "Safe Upload Platform — MVP REST API in front of safe-upload-create-file lambda",
+  "endpointConfiguration": {
+    "types": ["REGIONAL"]
+  }
+}

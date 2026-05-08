@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	chiadapter "github.com/awslabs/aws-lambda-go-api-proxy/chi"
+	"github.com/awslabs/aws-lambda-go-api-proxy/core"
 	chimux "github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -71,7 +72,14 @@ func CreateFile(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("[create-file] Processing file: name=%s size=%d", req.Name, req.Size)
 
-	uploadedBy := r.Header.Get("x-api-key")
+	apiCtx, ok := core.GetAPIGatewayContextFromContext(r.Context())
+	if !ok || apiCtx.Identity.APIKeyID == "" {
+		log.Printf("[create-file] ERROR: missing api key id in request context")
+		http.Error(w, `{"error": "unauthorized"}`, http.StatusUnauthorized)
+		return
+	}
+	uploadedBy := apiCtx.Identity.APIKeyID
+
 	fileID := uuid.New().String()
 	s3Key := fmt.Sprintf("uploads/%s/%s", fileID, req.Name)
 	expiresAt := time.Now().Add(1 * time.Hour).Unix()

@@ -1,0 +1,5 @@
+{
+  "restApiId": "<REST_API_ID>",
+  "parentId": "<ROOT_RESOURCE_ID>",
+  "pathPart": "{proxy+}"
+}

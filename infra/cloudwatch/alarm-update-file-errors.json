@@ -1,0 +1,21 @@
+{
+  "AlarmName": "safe-upload-update-file-errors",
+  "AlarmDescription": "Errors on safe-upload-update-file lambda over a 5-minute window",
+  "MetricName": "Errors",
+  "Namespace": "AWS/Lambda",
+  "Statistic": "Sum",
+  "Dimensions": [
+    { "Name": "FunctionName", "Value": "safe-upload-update-file" }
+  ],
+  "Period": 300,
+  "EvaluationPeriods": 1,
+  "Threshold": 1,
+  "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+  "TreatMissingData": "notBreaching",
+  "AlarmActions": [
+    "arn:aws:sns:<AWS_REGION>:<AWS_ACCOUNT_ID>:safe-upload-alarms"
+  ],
+  "OKActions": [
+    "arn:aws:sns:<AWS_REGION>:<AWS_ACCOUNT_ID>:safe-upload-alarms"
+  ]
+}

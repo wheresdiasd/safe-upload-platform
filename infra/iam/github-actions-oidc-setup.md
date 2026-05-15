@@ -29,7 +29,7 @@ Console path: **IAM → Roles → Create role**
 - GitHub repository: `safe-upload-platform`
 - GitHub branch: `main`
 
-This produces a default trust policy. **Replace it** with the contents of `github-actions-deploy-trust-policy.json` (substitute `<AWS_ACCOUNT_ID>` with `580909335056`). The reason to replace: the console-generated trust policy is sometimes overly permissive (allows any branch, any PR). The version here is exact-match for `main` only.
+This produces a default trust policy. **Replace it** with the contents of `github-actions-deploy-trust-policy.json` (substitute `<AWS_ACCOUNT_ID>` with `<AWS_ACCOUNT_ID>`). The reason to replace: the console-generated trust policy is sometimes overly permissive (allows any branch, any PR). The version here is exact-match for `main` only.
 
 ### 3. Skip the "Add permissions" step (yes, really)
 
@@ -52,7 +52,7 @@ Now the role exists. Open it from IAM → Roles → `safe-upload-github-deploy`.
 - Click the **JSON** tab (top-right of the editor).
 - Paste the contents of `github-actions-deploy-policy.json` and substitute placeholders:
   - `<AWS_REGION>` → `eu-west-2`
-  - `<AWS_ACCOUNT_ID>` → `580909335056`
+  - `<AWS_ACCOUNT_ID>` → `<AWS_ACCOUNT_ID>`
 - **Next** → policy name `safe-upload-deploy-lambda-update` → **Create policy**.
 
 ### 6. Configure the GitHub repo
@@ -61,7 +61,7 @@ In the repo (Settings → Secrets and variables → Actions):
 
 | Type | Name | Value |
 |------|------|-------|
-| Variable | `AWS_DEPLOY_ROLE_ARN` | `arn:aws:iam::580909335056:role/safe-upload-github-deploy` |
+| Variable | `AWS_DEPLOY_ROLE_ARN` | `arn:aws:iam::<AWS_ACCOUNT_ID>:role/safe-upload-github-deploy` |
 | Variable | `AWS_REGION` | `eu-west-2` |
 | Variable | `SAFE_UPLOAD_URL` | `https://03oljv1khe.execute-api.eu-west-2.amazonaws.com/dev` |
 | Secret | `SAFE_UPLOAD_KEY` | The API key value (from `aws apigateway create-api-key` output) |
@@ -86,7 +86,7 @@ After Stage 5 lands, opening any PR should run `ci.yml`. Merging a PR to `main` 
 ## Permissions granted to the deploy role
 
 Only what's needed:
-- `lambda:UpdateFunctionCode` on `arn:aws:lambda:eu-west-2:580909335056:function:safe-upload-*` — to push new zips.
+- `lambda:UpdateFunctionCode` on `arn:aws:lambda:eu-west-2:<AWS_ACCOUNT_ID>:function:safe-upload-*` — to push new zips.
 - `lambda:GetFunction` on the same — to read function config (used by some CLI flows).
 
 The role cannot:

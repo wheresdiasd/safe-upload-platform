@@ -1,0 +1,22 @@
+{
+  "AlarmName": "safe-upload-api-5xx",
+  "AlarmDescription": "5XX errors on safe-upload-api dev stage over a 5-minute window",
+  "MetricName": "5XXError",
+  "Namespace": "AWS/ApiGateway",
+  "Statistic": "Sum",
+  "Dimensions": [
+    { "Name": "ApiName", "Value": "safe-upload-api" },
+    { "Name": "Stage", "Value": "dev" }
+  ],
+  "Period": 300,
+  "EvaluationPeriods": 1,
+  "Threshold": 1,
+  "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+  "TreatMissingData": "notBreaching",
+  "AlarmActions": [
+    "arn:aws:sns:<AWS_REGION>:<AWS_ACCOUNT_ID>:safe-upload-alarms"
+  ],
+  "OKActions": [
+    "arn:aws:sns:<AWS_REGION>:<AWS_ACCOUNT_ID>:safe-upload-alarms"
+  ]
+}

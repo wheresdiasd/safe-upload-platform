@@ -19,10 +19,15 @@
       "Resource": "*"
     },
     {
+      "Sid": "LogGroupListAll",
+      "Effect": "Allow",
+      "Action": "logs:DescribeLogGroups",
+      "Resource": "*"
+    },
+    {
       "Sid": "LogGroupRetention",
       "Effect": "Allow",
       "Action": [
-        "logs:DescribeLogGroups",
         "logs:PutRetentionPolicy",
         "logs:DeleteRetentionPolicy"
       ],

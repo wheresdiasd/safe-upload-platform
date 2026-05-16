@@ -57,6 +57,15 @@
         "sns:ListSubscriptions"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "BudgetsManagement",
+      "Effect": "Allow",
+      "Action": [
+        "budgets:ModifyBudget",
+        "budgets:ViewBudget"
+      ],
+      "Resource": "arn:aws:budgets::<AWS_ACCOUNT_ID>:budget/safe-upload-*"
     }
   ]
 }

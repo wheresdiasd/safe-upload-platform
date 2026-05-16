@@ -1,0 +1,22 @@
+{
+  "BudgetName": "safe-upload-monthly",
+  "BudgetLimit": {
+    "Amount": "15.00",
+    "Unit": "USD"
+  },
+  "TimeUnit": "MONTHLY",
+  "BudgetType": "COST",
+  "CostTypes": {
+    "IncludeTax": true,
+    "IncludeSubscription": true,
+    "UseBlended": false,
+    "IncludeRefund": false,
+    "IncludeCredit": false,
+    "IncludeUpfront": true,
+    "IncludeRecurring": true,
+    "IncludeOtherSubscription": true,
+    "IncludeSupport": true,
+    "IncludeDiscount": true,
+    "UseAmortized": false
+  }
+}
